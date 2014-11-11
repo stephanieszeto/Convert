@@ -7,6 +7,7 @@
 //
 
 #import "ConverterViewController.h"
+#import "QuartzCore/QuartzCore.h"
 
 @interface ConverterViewController ()
 
@@ -33,6 +34,8 @@
 - (IBAction)onCurrencyM:(id)sender;
 - (IBAction)onCurrencyB:(id)sender;
 - (IBAction)onCurrencyT:(id)sender;
+
+- (IBAction)onSimplify:(id)sender;
 
 @end
 
@@ -136,6 +139,22 @@
     self.dollarsLastChanged = NO;
 }
 
+
+- (IBAction)onSimplify:(id)sender {
+    float dollars = [self.dollarValue.text floatValue];
+    float tRemainder = dollars / 1000000000000;
+    float bRemainder = dollars / 1000000000;
+    float mRemainder = dollars / 1000000;
+    
+    if (tRemainder > 1) {
+        self.dollarValue.text = [NSString stringWithFormat:@"%0.2fT", tRemainder];
+    } else if (bRemainder > 1) {
+        self.dollarValue.text = [NSString stringWithFormat:@"%0.2fB", bRemainder];
+    } else if (mRemainder > 1) {
+        self.dollarValue.text = [NSString stringWithFormat:@"%0.2fM", mRemainder];
+    }
+}
+
 - (void)onGeneralTap:(id)sender {
     [self.view endEditing:YES];
 }
@@ -146,7 +165,12 @@
     NSURLRequest *request = [NSURLRequest requestWithURL:[NSURL URLWithString:url]];
     [NSURLConnection sendAsynchronousRequest:request queue:[NSOperationQueue mainQueue] completionHandler:^(NSURLResponse *response, NSData *data, NSError *connectionError) {
         NSDictionary *json = [NSJSONSerialization JSONObjectWithData:data options:0 error:nil];
-        self.rates = [json objectForKey:@"rates"];
+        NSDictionary *rates = [json objectForKey:@"rates"];
+        self.rates = rates;
+        
+        // save rates to NSUserDefaults
+        NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+        [defaults setObject:rates forKey:@"rates"];
         NSLog(@"response: %@", json);
     }];
 }
@@ -172,6 +196,7 @@
         [self divideBy:self.dollarValue factor:1000000];
     }
     
+    [self dollarValueDidChange:self];
     self.dollarMOn = !self.dollarMOn;
     self.dollarsLastChanged = YES;
 }
@@ -183,6 +208,7 @@
         [self divideBy:self.dollarValue factor:1000000000];
     }
     
+    [self dollarValueDidChange:self];
     self.dollarBOn = !self.dollarBOn;
     self.dollarsLastChanged = YES;
 }
@@ -194,6 +220,7 @@
         [self divideBy:self.dollarValue factor:1000000000000];
     }
     
+    [self dollarValueDidChange:self];
     self.dollarTOn = !self.dollarTOn;
     self.dollarsLastChanged = YES;
 }
@@ -205,6 +232,7 @@
         [self divideBy:self.currencyValue factor:1000000];
     }
     
+    [self currencyValueDidChange:self];
     self.currencyMOn = !self.currencyMOn;
     self.dollarsLastChanged = NO;
 }
@@ -216,6 +244,7 @@
         [self divideBy:self.currencyValue factor:1000000000];
     }
     
+    [self currencyValueDidChange:self];
     self.currencyBOn = !self.currencyBOn;
     self.dollarsLastChanged = NO;
 }
@@ -227,7 +256,9 @@
         [self divideBy:self.currencyValue factor:1000000000000];
     }
     
+    [self currencyValueDidChange:self];
     self.currencyTOn = !self.currencyTOn;
     self.dollarsLastChanged = NO;
 }
+
 @end
